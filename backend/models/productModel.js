@@ -39,14 +39,14 @@ export const getProducts = async (page, limit, filters) => {
         const decryptedRows = rows.map(row => {
             if (row.SKU) {
                 try {
-                    row.SKU = decrypt(row.SKU); 
+                    row.SKU = decrypt(row.SKU);
                 } catch (error) {
                     console.error("Decryption error for SKU:", row.SKU, error);
                 }
             }
             return row;
         });
-        
+
 
         // Filter by decrypted SKU in JavaScript if applicable
         if (filters.SKU) {
@@ -88,6 +88,17 @@ const checkMaterialsExist = async (materialIds) => {
     }
 };
 
+
+// Check if SKU already exists
+const checkSKUExists = async (SKU) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM product WHERE SKU = ?', [SKU]);
+        return rows.length > 0;
+    } catch (error) {
+        throw new Error(`Error while checking SKU existence: ${error.message}`);
+    }
+};
+
 // Add a new product
 export const addProduct = async (product) => {
     try {
@@ -97,11 +108,24 @@ export const addProduct = async (product) => {
             throw new Error("SKU is required");
         }
 
+        // Check if SKU already exists before encryption
+        const existingProductQuery = 'SELECT SKU FROM product';
+        const [existingProducts] = await pool.query(existingProductQuery);
+
+        // Decrypt and check for duplicates
+        for (let existingProduct of existingProducts) {
+            const decryptedSKU = decrypt(existingProduct.SKU); // Decrypt SKU
+
+            if (decryptedSKU === SKU) {
+                throw new Error("Duplicate SKU detected. SKU must be unique.");
+            }
+        }
+
         if (!Array.isArray(material_ids) || material_ids.length === 0) {
             throw new Error("material_ids must be a non-empty array");
         }
 
-        const encryptedSKU = encrypt(SKU);
+        const encryptedSKU = encrypt(SKU); // Encrypt SKU before storing it
 
         // Validate Category ID
         const categoryExists = await checkCategoryExists(category_id);
@@ -125,6 +149,7 @@ export const addProduct = async (product) => {
         const [result] = await pool.query(query, [encryptedSKU, product_name, category_id, materialIdsString, price]);
         const productId = result.insertId;
 
+        // Insert media URLs if provided
         if (mediaUrls.length > 0) {
             const mediaQuery = `
                 INSERT INTO product_media (product_id, url) 
@@ -133,8 +158,6 @@ export const addProduct = async (product) => {
             for (let url of mediaUrls) {
                 await pool.query(mediaQuery, [productId, url]);
             }
-        } else {
-            console.error('No Media URLs provided. Skipping media insertion.');
         }
 
         return productId;
@@ -142,6 +165,8 @@ export const addProduct = async (product) => {
         throw new Error(`Error while adding product: ${error.message}`);
     }
 };
+
+
 
 // Update product and its corresponding media URLs
 export const updateProduct = async (id, product) => {
@@ -152,25 +177,38 @@ export const updateProduct = async (id, product) => {
             throw new Error("SKU is required");
         }
 
+        // Check if SKU already exists before encrypting
+        const existingProductQuery = 'SELECT SKU, product_id FROM product WHERE product_id != ?';
+        const [existingProducts] = await pool.query(existingProductQuery, [id]);
+
+        // Decrypt and check for duplicates
+        for (let existingProduct of existingProducts) {
+            const decryptedSKU = decrypt(existingProduct.SKU); // Decrypt SKU
+
+            if (decryptedSKU === SKU) {
+                throw new Error("Duplicate SKU detected. SKU must be unique.");
+            }
+        }
+
         if (!Array.isArray(material_ids) || material_ids.length === 0) {
             throw new Error("material_ids must be a non-empty array");
         }
 
-        const encryptedSKU = encrypt(SKU);
+        const encryptedSKU = encrypt(SKU); // Encrypt SKU before updating
 
         // Validate Category ID
         const categoryExists = await checkCategoryExists(category_id);
         if (!categoryExists) {
-            return { success: false, message: "Invalid category_id. It does not exist." }; // Return proper response
+            throw new Error("Invalid category_id. It does not exist.");
         }
 
         // Validate Material IDs
         const materialsExist = await checkMaterialsExist(material_ids);
         if (!materialsExist) {
-            return { success: false, message: "Invalid material_ids. Some materials do not exist." };
+            throw new Error("Invalid material_ids. Some materials do not exist.");
         }
 
-        const materialIdsString = material_ids.join(","); // Store as comma-separated string
+        const materialIdsString = material_ids.join(",");
 
         // Update product details in the product table
         const query = `
@@ -182,11 +220,9 @@ export const updateProduct = async (id, product) => {
 
         // Update media URLs for the product
         if (mediaUrls.length > 0) {
-            // Delete existing media entries for the product
             const deleteMediaQuery = 'DELETE FROM product_media WHERE product_id = ?';
             await pool.query(deleteMediaQuery, [id]);
 
-            // Insert new media URLs
             const mediaQuery = `
                 INSERT INTO product_media (product_id, url) 
                 VALUES (?, ?)
@@ -194,13 +230,14 @@ export const updateProduct = async (id, product) => {
             for (let url of mediaUrls) {
                 await pool.query(mediaQuery, [id, url]);
             }
-        } else {
-            console.error('No Media URLs provided. Skipping media update.');
         }
+
     } catch (error) {
         throw new Error(`Error while updating product: ${error.message}`);
     }
 };
+
+
 
 // Delete product
 export const deleteProduct = async (id) => {

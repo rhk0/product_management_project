@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { useNavigate } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify"; // Import toast components
+import "react-toastify/dist/ReactToastify.css"; // Import styles
 
 const ProductList = () => {
   const [products, setProducts] = useState([]);
@@ -13,7 +15,7 @@ const ProductList = () => {
   const [limit, setLimit] = useState(10);
   const [editingProduct, setEditingProduct] = useState(null);
 
-  const navigate = useNavigate(); // Initialize useNavigate
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchProducts();
@@ -46,7 +48,6 @@ const ProductList = () => {
         }
       );
       if (response.ok) {
-        // Remove the deleted product from the local state
         setProducts(
           products.filter((product) => product.product_id !== productId)
         );
@@ -77,7 +78,7 @@ const ProductList = () => {
               .split(",")
               .map((id) => Number(id.trim())),
             price: editingProduct.price,
-            media_url: editingProduct.media_url, // Add media_url to the request
+            media_url: editingProduct.media_url,
           }),
         }
       );
@@ -91,12 +92,19 @@ const ProductList = () => {
           )
         );
         setEditingProduct(null);
+
+        toast.success( " product Updated successfully!");
+
       } else {
         const errorData = await response.json();
-        console.error("Error updating product:", errorData.message);
+        console.error("Error updating product:", errorData.error);
+        toast.error(`Error: ${errorData.error || "Failed to update product"}`);
+
       }
     } catch (error) {
       console.error("Failed to edit product:", error);
+      toast.error(`Error: ${error.message || "Failed to update product"}`);
+
     }
   };
 
@@ -107,20 +115,18 @@ const ProductList = () => {
     });
   };
 
-  // Add navigation function for Add Product and Statistics
   const handleAddProduct = () => {
-    navigate("/add"); // Navigate to the "Add Product" page
+    navigate("/add");
   };
 
   const handleViewStatistics = () => {
-    navigate("/statistics"); // Navigate to the "Statistics" page
+    navigate("/statistics");
   };
 
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Product List</h1>
 
-      {/* Buttons for Add Product and Statistics */}
       <div className="mb-4 flex justify-end">
         <button
           onClick={handleAddProduct}
@@ -136,7 +142,6 @@ const ProductList = () => {
         </button>
       </div>
 
-      {/* Filters */}
       <div className="mb-4">
         <input
           type="text"
@@ -172,7 +177,6 @@ const ProductList = () => {
         />
       </div>
 
-      {/* Table */}
       <div className="overflow-x-auto">
         <table className="min-w-full table-auto border-collapse">
           <thead>
@@ -196,13 +200,13 @@ const ProductList = () => {
                 <td className="border px-4 py-2">
                   <button
                     onClick={() => handleEdit(product)}
-                    className="bg-yellow-500 text-white px-4 py-2 rounded mr-2"
+                    className="bg-yellow-500 text-white px-4 py-2 rounded mr-2 mb-1"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => handleDelete(product.product_id)}
-                    className="bg-red-500 text-white px-4 py-2 rounded"
+                    className="bg-red-500 text-white px-4 py-2 rounded mt-1"
                   >
                     Delete
                   </button>
@@ -213,61 +217,95 @@ const ProductList = () => {
         </table>
       </div>
 
-      {/* Edit Modal */}
       {editingProduct && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white p-6 rounded">
+          <div className="bg-white p-6 rounded max-w-lg w-full">
             <h2 className="text-2xl font-bold mb-4">Edit Product</h2>
-            <input
-              type="text"
-              name="SKU"
-              value={editingProduct.SKU}
-              onChange={handleChangeEdit}
-              className="border p-2 m-2"
-              placeholder="SKU"
-            />
-            <input
-              type="text"
-              name="product_name"
-              value={editingProduct.product_name}
-              onChange={handleChangeEdit}
-              className="border p-2 m-2"
-              placeholder="Product Name"
-            />
-            <input
-              type="text"
-              name="Category_id"
-              value={editingProduct.Category_id}
-              onChange={handleChangeEdit}
-              className="border p-2 m-2"
-              placeholder="Category_id"
-            />
-            <input
-              type="text"
-              name="material_ids"
-              value={editingProduct.material_ids}
-              onChange={handleChangeEdit}
-              className="border p-2 m-2"
-              placeholder="material_ids"
-            />
-            <input
-              type="number"
-              name="price"
-              value={editingProduct.price}
-              onChange={handleChangeEdit}
-              className="border p-2 m-2"
-              placeholder="Price"
-            />
-            {/* Media URL Input */}
-            <input
-              type="text"
-              name="media_url"
-              value={editingProduct.media_url || ""}
-              onChange={handleChangeEdit}
-              className="border p-2 m-2"
-              placeholder="Media URL"
-            />
-            <div className="mt-4">
+            <div className="mb-4">
+              <label htmlFor="SKU" className="block text-sm font-semibold mb-1">
+                SKU
+              </label>
+              <input
+                type="text"
+                name="SKU"
+                value={editingProduct.SKU}
+                onChange={handleChangeEdit}
+                className="border p-2 w-full"
+                placeholder="SKU"
+              />
+            </div>
+            <div className="mb-4">
+              <label
+                htmlFor="product_name"
+                className="block text-sm font-semibold mb-1"
+              >
+                Product Name
+              </label>
+              <input
+                type="text"
+                name="product_name"
+                value={editingProduct.product_name}
+                onChange={handleChangeEdit}
+                className="border p-2 w-full"
+                placeholder="Product Name"
+              />
+            </div>
+            <div className="mb-4">
+              <label htmlFor="Category_id" className="block text-sm font-semibold mb-1">
+                Category ID
+              </label>
+              <input
+                type="text"
+                name="Category_id"
+                value={editingProduct.Category_id}
+                onChange={handleChangeEdit}
+                className="border p-2 w-full"
+                placeholder="Category ID"
+              />
+            </div>
+            <div className="mb-4">
+              <label
+                htmlFor="material_ids"
+                className="block text-sm font-semibold mb-1"
+              >
+                Material IDs
+              </label>
+              <input
+                type="text"
+                name="material_ids"
+                value={editingProduct.material_ids}
+                onChange={handleChangeEdit}
+                className="border p-2 w-full"
+                placeholder="Material IDs"
+              />
+            </div>
+            <div className="mb-4">
+              <label htmlFor="price" className="block text-sm font-semibold mb-1">
+                Price
+              </label>
+              <input
+                type="number"
+                name="price"
+                value={editingProduct.price}
+                onChange={handleChangeEdit}
+                className="border p-2 w-full"
+                placeholder="Price"
+              />
+            </div>
+            <div className="mb-4">
+              <label htmlFor="media_url" className="block text-sm font-semibold mb-1">
+                Media URL
+              </label>
+              <input
+                type="text"
+                name="media_url"
+                value={editingProduct.media_url || ""}
+                onChange={handleChangeEdit}
+                className="border p-2 w-full"
+                placeholder="Media URL"
+              />
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
               <button
                 onClick={saveEditedProduct}
                 className="bg-blue-500 text-white px-4 py-2 rounded"
@@ -276,7 +314,7 @@ const ProductList = () => {
               </button>
               <button
                 onClick={() => setEditingProduct(null)}
-                className="bg-gray-500 text-white px-4 py-2 rounded ml-2"
+                className="bg-gray-500 text-white px-4 py-2 rounded"
               >
                 Cancel
               </button>
@@ -285,8 +323,7 @@ const ProductList = () => {
         </div>
       )}
 
-      {/* Pagination */}
-      <div className="mt-4">
+      <div className="mt-4 flex justify-between">
         <button
           onClick={() => setPage(page - 1)}
           disabled={page === 1}
@@ -296,11 +333,13 @@ const ProductList = () => {
         </button>
         <button
           onClick={() => setPage(page + 1)}
-          className="bg-blue-500 text-white px-4 py-2 rounded ml-2"
+          className="bg-blue-500 text-white px-4 py-2 rounded"
         >
           Next
         </button>
       </div>
+      <ToastContainer /> 
+
     </div>
   );
 };

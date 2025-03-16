@@ -1,11 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import React, { useState } from "react";
 import { ToastContainer, toast } from "react-toastify"; // Import toast components
 import "react-toastify/dist/ReactToastify.css"; // Import styles
 
 const ProductForm = () => {
-  const { id } = useParams(); // Extract the `id` parameter from the URL
-
   const [formData, setFormData] = useState({
     SKU: "",
     product_name: "",
@@ -14,28 +11,6 @@ const ProductForm = () => {
     price: "",
     mediaUrls: "", // Add mediaUrls to state
   });
-
-  // Fetch product data if `id` is provided (for editing)
-  useEffect(() => {
-    if (id) {
-      fetchProduct(id);
-    }
-  }, [id]);
-
-  const fetchProduct = async (productId) => {
-    try {
-      const response = await fetch(
-        `http://localhost:5000/api/products/${productId}`
-      );
-      if (!response.ok) {
-        throw new Error("Failed to fetch product");
-      }
-      const data = await response.json();
-      setFormData(data);
-    } catch (error) {
-      console.error("Error fetching product:", error);
-    }
-  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -60,14 +35,8 @@ const ProductForm = () => {
           : [],
       };
 
-      const url = id
-        ? `http://localhost:5000/api/products/${id}` // Update product
-        : "http://localhost:5000/api/products"; // Add new product
-
-      const method = id ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
+      const response = await fetch("http://localhost:5000/api/products", {
+        method: "POST", // Always POST for adding a new product
         headers: {
           "Content-Type": "application/json",
         },
@@ -80,12 +49,19 @@ const ProductForm = () => {
         throw new Error(result.error || "Something went wrong");
       }
 
-      // Success message
-      toast.success(`${id ? "Updated" : "Added"} product successfully!`);
+      toast.success("Product added successfully!");
+
+      // Clear the form after successful submission
+      setFormData({
+        SKU: "",
+        product_name: "",
+        category_id: "",
+        material_ids: "",
+        price: "",
+        mediaUrls: "",
+      });
     } catch (error) {
       console.error("Error saving product:", error);
-
-      // Show error toast message with appropriate message
       toast.error(`Error: ${error.message || "Failed to save product"}`);
     }
   };
@@ -93,7 +69,7 @@ const ProductForm = () => {
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white shadow-md rounded-md">
       <h2 className="text-2xl font-semibold text-center mb-6 underline">
-        {id ? "Update Product" : "Add New Product"}
+        Add New Product
       </h2>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
@@ -176,11 +152,11 @@ const ProductForm = () => {
             type="submit"
             className="bg-blue-500 text-white px-6 py-3 rounded-md w-full sm:w-auto"
           >
-            {id ? "Update Product" : "Add Product"}
+            Add Product
           </button>
         </div>
       </form>
-      <ToastContainer /> {/* Toast container to display toast messages */}
+      <ToastContainer />
     </div>
   );
 };
