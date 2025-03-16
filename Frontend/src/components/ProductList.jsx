@@ -197,7 +197,7 @@ const ProductList = () => {
                 <td className="border px-4 py-2">{product.Category_id}</td>
                 <td className="border px-4 py-2">{product.material_ids}</td>
                 <td className="border px-4 py-2">${product.price}</td>
-                <td className="border px-4 py-2">
+                <td className="border px-4 py-2 text-center">
                   <button
                     onClick={() => handleEdit(product)}
                     className="bg-yellow-500 text-white px-4 py-2 rounded mr-2 mb-1"
