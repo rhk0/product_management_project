@@ -32,4 +32,4 @@ CREATE TABLE product_media (
 );
 
 
-Thanks in Advance for Considering this if any issue contact : 9111642625 email: rhk0012@gmail.com # media-task
+Thanks in Advance for Considering this if any issue contact : 9111642625 email: rhk0012@gmail.com
