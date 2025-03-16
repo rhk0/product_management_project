@@ -45,21 +45,20 @@ const ProductForm = () => {
 
       const result = await response.json();
 
-      if (!response.ok) {
-        throw new Error(result.error || "Something went wrong");
+      if (response.ok) {
+        toast.success("Product added successfully!");
+
+        setFormData({
+          SKU: "",
+          product_name: "",
+          category_id: "",
+          material_ids: "",
+          price: "",
+          mediaUrls: "",
+        });
+      } else {
+        toast.error(result.error || "Failed to save product");
       }
-
-      toast.success("Product added successfully!");
-
-      // Clear the form after successful submission
-      setFormData({
-        SKU: "",
-        product_name: "",
-        category_id: "",
-        material_ids: "",
-        price: "",
-        mediaUrls: "",
-      });
     } catch (error) {
       console.error("Error saving product:", error);
       toast.error(`Error: ${error.message || "Failed to save product"}`);
